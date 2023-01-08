@@ -1,10 +1,11 @@
 import TrackBank = com.bitwig.extension.controller.api.TrackBank;
 import CursorTrack = com.bitwig.extension.controller.api.CursorTrack;
-import {applySpec, path} from 'rambda';
-import {Control, LedButtonStates} from '../controls';
+import {applySpec, path, prop} from 'rambda';
+import {AMBER, Control, GREEN, LedButtonStates, OFF, RED} from '../controls';
 import {ChannelControls, Controls} from '../Configuration';
 import {log} from '../utils/utils';
 import {preferences} from '../XoneK2.control';
+import Track = com.bitwig.extension.controller.api.Track;
 
 export interface MixerControls {
     indicator: Control;
@@ -13,18 +14,11 @@ export interface MixerControls {
     b: Control;
     solo: Control;
     volume: Control;
-    reverb: Control;
-    delay: Control;
+    send1: Control;
+    send2: Control;
 }
 
 export default class MixerLayer {
-
-    private verticalMatrix = [
-        ['A', 'E', 'I', 'M'],
-        ['B', 'F', 'J', 'N'],
-        ['C', 'G', 'K', 'O'],
-        ['D', 'H', 'L', 'P'],
-    ]
 
     private matrix = [
         ['A', 'B', 'C', 'D'],
@@ -34,15 +28,144 @@ export default class MixerLayer {
     ]
 
     private getMixerControls = (deck: string, offset: number) => applySpec<MixerControls>({
-        indicator: path<Control>([deck, 'encoderLeds', offset + 1]),
-        mute: path<Control>([deck, 'matrix', this.matrix[0][offset]]),
-        a: path<Control>([deck, 'matrix', this.matrix[1][offset]]),
-        b: path<Control>([deck, 'matrix', this.matrix[2][offset]]),
-        solo: path<Control>([deck, 'matrix', this.matrix[3][offset]]),
-        volume: path<Control>([deck, 'sliders', this.matrix[0][offset]]),
-        reverb: path<Control>([deck, 'column', offset + 1, 'KNOB_1']),
-        delay: path<Control>([deck, 'column', offset + 1, 'KNOB_2']),
+        indicator: path([deck, 'encoderLeds', offset + 1]),
+        mute: path([deck, 'matrix', this.matrix[0][offset]]),
+        a: path([deck, 'matrix', this.matrix[1][offset]]),
+        select: path([deck, 'matrix', this.matrix[2][offset]]),
+        solo: path([deck, 'matrix', this.matrix[3][offset]]),
+        volume: path([deck, 'sliders', this.matrix[0][offset]]),
+        send1: path([deck, 'column', offset + 1, 'KNOB_1']),
+        send2: path([deck, 'column', offset + 1, 'KNOB_2']),
     })(ChannelControls)
+
+    private handleAllTracks = () => ({
+        mute: this.handleMute,
+        solo: this.handleSolo,
+        volume: this.handleVolume,
+        select: this.handleSelect,
+        a: this.testControlPressAndRelease,
+        indicator: this.handleTrackTypeIndicator
+    })
+
+    private handleAudioTracks = () => ({
+        send1: this.handleSend1,
+        send2: this.handleSend2,
+    })
+
+    constructor(private trackBank: TrackBank, private cursorTrack: CursorTrack) {
+        this.init();
+    }
+
+    init() {
+        this.handleEncoder(ChannelControls.A.encoder);
+        this.handleScroll(ChannelControls.A.scroll);
+        for (let i = 0; i < this.trackBank.getSizeOfBank(); i++) {
+            const track = this.trackBank.getItemAt(i);
+            const controls = this.controls[i];
+            for (const [key, handler] of Object.entries(this.handleAllTracks())) {
+                handler(prop(key, controls), track, i);
+            }
+        }
+    }
+
+    private handleMute = (control: Control, track: Track, i: number) => {
+        control.on('noteOn', (e: any) => {
+            track.mute().toggle();
+        });
+        track.mute().addValueObserver((muted) => {
+            control.setState(muted ? RED : GREEN);
+        });
+    }
+
+    private handleSolo = (control: Control, track: Track, i: number) => {
+        control.on('noteOn', (e: any) => {
+            track.solo().toggle(false);
+        });
+        track.solo().addValueObserver((muted) => {
+            control.setState(muted ? AMBER : OFF);
+        });
+    }
+
+    private handleSelect = (control: Control, track: Track, i: number) => {
+        control.on('noteOn', (e: any) => {
+            track.selectInMixer();
+        });
+        // note: need to figure out select watcher
+    }
+
+    private handleVolume = (control: Control, track: Track, i: number) => {
+        control.on('cc', (e: any) => {
+            track.volume().set(Math.min(preferences.mixer.maxVolume, e.velocity), 128);
+        });
+    }
+
+    private handleSend1 = (control: Control, track: Track, i: number) => {
+        const send = track.getSend(0);
+        control.on('cc', (e: any) => {
+            send.set(e.velocity, 128);
+        });
+    }
+
+    private handleSend2 = (control: Control, track: Track, i: number) => {
+        const send = track.getSend(1);
+        control.on('cc', (e: any) => {
+            send.set(e.velocity, 128);
+        });
+    }
+
+    private handleTrackTypeIndicator = (control: Control, track: Track, i: number) => {
+        const trackType = track.trackType();
+        trackType.addValueObserver((trackType) => {
+            let state = LedButtonStates.OFF;
+            switch (trackType) {
+                case 'Instrument':
+                    state = LedButtonStates.GREEN;
+                    break;
+                case 'Audio':
+                    state = LedButtonStates.AMBER;
+                    break;
+                case 'Group':
+                    state = LedButtonStates.RED;
+                    break;
+            }
+            control.setState(state);
+        });
+    }
+
+    private handleEncoder = (control: Control) => {
+        control.on('cc', (e) => {
+            if (e.velocity < 64) {
+                this.cursorTrack.selectParent();
+            } else {
+                this.cursorTrack.selectFirstChild();
+            }
+        });
+    }
+
+    private handleScroll = (control: Control) => {
+        control.on('cc', (e) => {
+            const scroll = e.velocity < 64 ? 1 : -1;
+            this.trackBank.scrollBy(scroll);
+        });
+    }
+
+    private testControlPressAndRelease = (control: Control, track: Track) => {
+        let toggle = false;
+        control.setState(LedButtonStates.AMBER);
+        control.on('hold', (event) => {
+            log('on:hold', event);
+            control.setState(LedButtonStates.RED);
+        });
+        control.on('release', (event) => {
+            log('on:release', event);
+            control.setState(toggle ? LedButtonStates.GREEN : LedButtonStates.AMBER);
+        });
+        control.on('press', (event) => {
+            log('on:press', event);
+            toggle = !toggle;
+            control.setState(toggle ? LedButtonStates.GREEN : LedButtonStates.AMBER);
+        });
+    }
 
     private controls: MixerControls[] = [
         this.getMixerControls('A', 0),
@@ -62,128 +185,4 @@ export default class MixerLayer {
         this.getMixerControls('D', 2),
         this.getMixerControls('D', 3),
     ]
-
-    constructor(private trackBank: TrackBank, private cursorTrack: CursorTrack) {
-        this.initTrackBank();
-        this.initObservers();
-    }
-
-
-    initTrackBank() {
-
-        for (let i = 0; i < this.trackBank.getSizeOfBank(); i++) {
-            const track = this.trackBank.getItemAt(i);
-
-            const trackType = track.trackType();
-            trackType.addValueObserver((trackType) => {
-                log('trackType', trackType);
-                this.setTrackTypeIndicator(this.controls[i], trackType);
-            });
-
-            const isGroup = track.isGroup();
-            isGroup.addValueObserver((isGroup) => log('isGroup', isGroup));
-
-            const trackCursor = track.createCursorDevice();
-
-            trackCursor.deviceType().addValueObserver((deviceType) => {
-                log('trackCursor', deviceType);
-            });
-
-            // const drumPadBank = trackCursor.createDrumPadBank(16);
-            // drumPadBank.
-
-            const v = track.volume();
-            v.markInterested();
-            v.setIndication(true);
-
-            const s = track.solo();
-            s.markInterested();
-
-            const m = track.mute();
-            m.markInterested();
-        }
-    }
-
-    setTrackTypeIndicator(control: MixerControls, trackType: string) {
-        let state = LedButtonStates.OFF;
-        switch (trackType) {
-            case 'Instrument':
-                state = LedButtonStates.GREEN;
-                break;
-            case 'Audio':
-                state = LedButtonStates.AMBER;
-                break;
-            case 'Group':
-                state = LedButtonStates.RED;
-                break;
-        }
-        control.indicator.setState(state);
-    }
-
-    initObservers() {
-        for (let i = 0; i < this.trackBank.getSizeOfBank(); i++) {
-            const control = this.controls[i];
-            this.trackBank.getItemAt(i).mute().addValueObserver((muted) => {
-                control.mute.setState(muted ? LedButtonStates.RED : LedButtonStates.GREEN);
-            });
-            this.trackBank.getItemAt(i).solo().addValueObserver((solo) => {
-                control.solo.setState(solo ? LedButtonStates.AMBER : LedButtonStates.OFF);
-            });
-
-        }
-    }
-
-    onMidi = (status: number, channel: number, note: number, velocity: number): void => {
-        log('channel', channel);
-        if (note === Controls.scroll.cc) {
-            // const scroll = velocity < 64 ? 1 : -1;
-            if (velocity < 64) {
-                this.trackBank.scrollBackwards();
-            } else {
-                this.trackBank.scrollForwards();
-            }
-            // this.trackBank.scrollBy(scroll);
-            return;
-        }
-        if (note === Controls.encoder.cc) {
-            // const scroll = velocity < 64 ? 1 : -1;
-            if (velocity < 64) {
-                this.cursorTrack.selectParent();
-            } else {
-                this.cursorTrack.selectFirstChild();
-            }
-            // this.trackBank.scrollBy(scroll);
-            return;
-        }
-        for (let i = 0; i < this.trackBank.getSizeOfBank(); i++) {
-            const control = this.controls[i];
-            const track = this.trackBank.getItemAt(i);
-            const reverb = track.getSend(0);
-            const delay = track.getSend(1);
-            if (isNoteOn(status)) {
-                if (note === control.mute.cc && channel === control.mute.channel) {
-                    track.mute().toggle();
-                }
-                if (note === control.solo.cc && channel === control.solo.channel) {
-                    track.solo().toggle(false);
-                }
-                if (note === control.b.cc && channel === control.b.channel) {
-                    track.selectInMixer();
-                }
-            }
-            if (isChannelController(status)) {
-                // log('isChannelController', control.volume);
-                if (note === control.volume.cc && channel === control.volume.channel) {
-                    track.volume().set(Math.min(preferences.mixer.maxVolume, velocity), 128);
-                }
-                if (note === control.reverb.cc && channel === control.reverb.channel) {
-                    reverb.set(velocity, 128);
-                }
-                if (note === control.delay.cc && channel === control.delay.channel) {
-                    delay.set(velocity, 128);
-                }
-            }
-        }
-
-    }
 }

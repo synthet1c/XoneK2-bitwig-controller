@@ -6,6 +6,7 @@ import {SettingsHandler} from './classes/Settings';
 import {log} from './utils/utils';
 import {Controls, leds} from './Configuration';
 import CursorDeviceFollowMode = com.bitwig.extension.controller.api.CursorDeviceFollowMode;
+import {Control} from './controls';
 
 let transport: TransportHandler = null;
 
@@ -65,9 +66,10 @@ global.init = function init() {
     layer = new MixerLayer(mainTrackBank, cursorTrack);
 
     midi.setMidiCallback((status: number, channel: number, note: number, velocity: number) => {
-        log(`onMidi0(`, {status, channel, note, velocity});
-        layer.onMidi(status, channel, note, velocity);
+        // log(`onMidi0(`, {status, channel, note, velocity});
+        // layer.onMidi(status, channel, note, velocity);
         transport.onMidi(status, channel, note, velocity);
+        Control.onMidi(status, channel, note, velocity);
     });
 
     // cursorDevice = host.createCursorTrack('XONE_K2_DEVICE', 'Cursor Device', 0, CursorDeviceFollowMode.FOLLOW_SELECTION);
@@ -91,14 +93,14 @@ global.init = function init() {
 // Called when a short MIDI message is received on MIDI input port 0.
 function onMidi0(status: number, note: number, velocity: number) {
     // TODO: Implement your MIDI input handling code here.
-    log(`onMidi0(`, `${status}, ${note}, ${velocity})`);
+    // log(`onMidi0(`, `${status}, ${note}, ${velocity})`);
     // layer.onMidi(status, note, velocity);
     if (isNoteOn(status)) {
         switch (note) {
-            case Controls.shift.cc:
+            case Controls.shift.note:
                 transport.play();
                 break;
-            // case Controls.volume1.cc:
+            // case Controls.volume1.note:
             // transport.play();
             // break;
             default:
@@ -141,7 +143,7 @@ function onSysex0(data: string) {
 
 // const indexed = Object.entries(controls).reduce((acc, [key, control]) => ({
 //    ...acc,
-//    [`${control.channel}-${control.cc}`]: control,
+//    [`${control.channel}-${control.note}`]: control,
 // }), {});
 
 

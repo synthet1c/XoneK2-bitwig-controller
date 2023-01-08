@@ -31,7 +31,7 @@ export class TransportHandler {
 
     onMidi = (status: number, channel: number, note: number, velocity: number): void => {
         if (isNoteOn(status)) {
-            if (channel === this.PLAY.channel && note === this.PLAY.cc) {
+            if (channel === this.PLAY.channel && note === this.PLAY.note) {
                 this.transport.play();
             }
         }

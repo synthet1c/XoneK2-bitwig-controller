@@ -28,12 +28,12 @@ export class LedButton extends Control {
     private previousState = 0;
     public state: any = null;
     private stateName: LedButtonStates = LedButtonStates.OFF;
-    constructor(public cc: number, public channel: number = 1) {
-        super(cc, channel);
+    constructor(public note: number, public channel: number = 1) {
+        super(note, channel);
         this.states = {
-            [LedButtonStates.RED]: cc,
-            [LedButtonStates.AMBER]: cc + (12 * 3),
-            [LedButtonStates.GREEN]: cc + (12 * 6),
+            [LedButtonStates.RED]: note,
+            [LedButtonStates.AMBER]: note + (12 * 3),
+            [LedButtonStates.GREEN]: note + (12 * 6),
             [LedButtonStates.OFF]: 0,
         }
         this.previousState = 0;
@@ -55,7 +55,7 @@ export class LedButton extends Control {
         }
         this.modified = false;
         if (this.state === 0) {
-            midi.output.sendMidi(0x90 + (this.channel - 1), this.cc, 0);
+            midi.output.sendMidi(0x90 + (this.channel - 1), this.note, 0);
             return;
         }
         midi.output.sendMidi(0x90 + (this.channel - 1), this.state, 127);
@@ -64,12 +64,12 @@ export class LedButton extends Control {
 
 
 export class WeirdButton extends LedButton {
-    constructor(cc: number, channel: number = 1) {
-        super(cc, channel);
+    constructor(note: number, channel: number = 1) {
+        super(note, channel);
         this.states = {
-            [LedButtonStates.RED]: cc,
-            [LedButtonStates.AMBER]: cc + 4,
-            [LedButtonStates.GREEN]: cc + 8,
+            [LedButtonStates.RED]: note,
+            [LedButtonStates.AMBER]: note + 4,
+            [LedButtonStates.GREEN]: note + 8,
             [LedButtonStates.OFF]: 0,
         }
     }
