@@ -1,20 +1,29 @@
 {
-  "name": "launchpad-pro-mk3-bitwig-controller",
+  "name": "xoneK2-bitwig-controller",
   "version": "0.4.0",
-  "description": "Novation Launchpad Pro Mk3 controller script for Bitwig Studio",
-  "main": "dist/Launchpad-Pro-Mk3.control.js",
+  "description": "Allen &amp; heath Xone:K2 controller script for Bitwig Studio",
+  "main": "build/XoneK2.control.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm run compile",
+    "build:tsc": "npm run compile",
+    "build": "npx webpack",
+    "dev:tsc": "npm run watch",
+    "dev": "npx webpack -w",
     "compile": "npx tsc -p tsconfig.json",
-    "watch": "npx tsc -p tsconfig.json --watch"
+    "watch:tsc": "npx tsc -p tsconfig.json --watch",
+    "watch": "npx webpack -w"
   },
-  "author": "Simon Heimler",
+  "author": "Andrew Fountain (synthet1c)",
   "license": "ISC",
   "dependencies": {
+    "rambda": "^7.4.0"
   },
   "devDependencies": {
-    "typed-bitwig-api": "^12.0.0",
-    "typescript": "^4.4.3"
+    "@types/node": "^18.11.9",
+    "ts-loader": "^9.4.2",
+    "typed-bitwig-api": "^17.0.1",
+    "typescript": "^4.9.4",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
   }
 }

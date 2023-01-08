@@ -1,13 +1,25 @@
 {
     "compilerOptions": {
-        "module": "none",
+        "target": "es5",
+        "lib": [
+            "es5",
+            "es6",
+            "es2015",
+            "es2017",
+            "esnext"
+        ],
+        "module": "esnext",
         "strict": true,
+        "allowJs": true,
         "esModuleInterop": true,
-        "target": "es6",
         "moduleResolution": "node",
+        "strictNullChecks": false,
+        "skipLibCheck": true,
         "sourceMap": false,
         "types": [
-            "typed-bitwig-api"
+            "typed-bitwig-api",
+            "rambda",
+            "@types/node",
         ],
         "outDir": "dist",
         "baseUrl": ".",
@@ -18,11 +30,11 @@
             ]
         }
     },
-    "lib": [
-        "es2015"
-    ],
     "include": [
-        "src/**/*",
         "src/*",
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules/**/*"
     ]
 }
