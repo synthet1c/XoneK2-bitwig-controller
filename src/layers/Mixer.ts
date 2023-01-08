@@ -65,6 +65,9 @@ export default class MixerLayer {
             for (const [key, handler] of Object.entries(this.handleAllTracks())) {
                 handler(prop(key, controls), track, i);
             }
+            for (const [key, handler] of Object.entries(this.handleAudioTracks())) {
+                handler(prop(key, controls), track, i);
+            }
         }
     }
 

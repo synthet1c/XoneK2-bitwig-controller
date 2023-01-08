@@ -3,7 +3,7 @@ import MixerLayer from './layers/Mixer';
 import {MidiPort} from './classes/MidiPort';
 import {App} from './classes/App';
 import {SettingsHandler} from './classes/Settings';
-import {log} from './utils';
+import {error, log} from './utils';
 import {leds} from './Configuration';
 
 let transport: TransportHandler = null;
@@ -25,7 +25,7 @@ export const preferences = {
 // @ts-ignore
 global.init = function init() {
     let start = Date.now();
-    log("<--------- Xone X2 Extreme init! --------->", new Date().toString());
+    error("<--------- Xone X2 Extreme init! --------->", new Date().toString());
 
     midi = new MidiPort({
         numInPorts: 1,
@@ -49,7 +49,7 @@ global.init = function init() {
     mainTrackBank.followCursorTrack(cursorTrack);
     layer = new MixerLayer(mainTrackBank, cursorTrack);
 
-    log("<--------- Xone X2 Extreme end init! --------->", Date.now() - start + 'ms');
+    error("<--------- Xone X2 Extreme end init! --------->", Date.now() - start + 'ms');
 }
 
 // @ts-ignore
