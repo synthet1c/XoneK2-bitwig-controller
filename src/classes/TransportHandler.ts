@@ -1,5 +1,5 @@
 import Transport = com.bitwig.extension.controller.api.Transport;
-import {error, log} from '../utils/utils';
+import {error, log} from '../utils';
 import {AMBER, Control, GREEN, LedButtonStates, OFF, RED} from '../controls';
 import {ChannelControls} from '../Configuration';
 

@@ -1,13 +1,18 @@
 import {Control, LedButton} from '../controls';
 
 
-export function isObject(possibleObject: any): boolean {
-    return typeof possibleObject === 'object' && possibleObject !== null;
-}
+export const isObject = (possibleObject: any): boolean =>
+    typeof possibleObject === 'object' && possibleObject !== null;
 
+/**
+ * Clone the Control and set the channel
+ *
+ * @param controls {GlobalControls}
+ * @param channel {number}
+ * @param acc {object}
+ */
 export function channelify(controls: any, channel: number, acc: any = {}) {
     for (const [key, value] of Object.entries(controls)) {
-        // log('key', key);
         if (isObject(value)) {
             acc[key] = channelify(value, channel, {});
         }
@@ -21,9 +26,7 @@ export function channelify(controls: any, channel: number, acc: any = {}) {
 }
 
 export function over(object: any, callback: (value: any) => void): void {
-    // log('over', object);
     for (const [key, value] of Object.entries(object)) {
-        // log('key', key);
         if (value instanceof Control) {
             callback(value);
             continue;
@@ -35,11 +38,8 @@ export function over(object: any, callback: (value: any) => void): void {
 }
 
 export function flatMapLeds(object: any, acc : LedButton[] = []): LedButton[] {
-    // log('over', object);
     for (const [key, value] of Object.entries(object)) {
-        // log('key', key);
         if (value instanceof LedButton) {
-            // log('LedButton', key);
             acc = acc.concat(value);
             continue;
         }
@@ -48,4 +48,16 @@ export function flatMapLeds(object: any, acc : LedButton[] = []): LedButton[] {
         }
     }
     return acc;
+}
+
+
+export function getChannel(status: number): number {
+    switch (true) {
+        case isNoteOn(status):
+            return status - 143;
+        case isNoteOff(status):
+            return status - 127;
+        case isChannelController(status):
+            return status - 175;
+    }
 }

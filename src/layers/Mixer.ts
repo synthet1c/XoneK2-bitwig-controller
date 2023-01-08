@@ -3,7 +3,7 @@ import CursorTrack = com.bitwig.extension.controller.api.CursorTrack;
 import {applySpec, path, prop} from 'rambda';
 import {AMBER, Control, GREEN, LedButtonStates, OFF, RED} from '../controls';
 import {ChannelControls} from '../Configuration';
-import {log} from '../utils/utils';
+import {log} from '../utils';
 import {preferences} from '../XoneK2.control';
 import Track = com.bitwig.extension.controller.api.Track;
 

@@ -1,6 +1,6 @@
 import MidiIn = com.bitwig.extension.controller.api.MidiIn;
 import MidiOut = com.bitwig.extension.controller.api.MidiOut;
-import {getChannel, log} from '../utils/utils';
+import {getChannel, log} from '../utils';
 import {Control} from '../controls';
 
 export interface MidiPortConfiguration {

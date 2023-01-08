@@ -1,6 +1,6 @@
 import {Encoder, Knob, LedButton, LedButtonStates, Slider, WeirdButton} from './';
 import {compose, filter, lensPath, over, prop, propEq} from 'rambda';
-import {error, log, setTimeout, clearTimeout} from '../utils/utils';
+import {error, log, setTimeout, clearTimeout} from '../utils';
 
 export type ControlType = Control | WeirdButton | Knob | Slider | Encoder | LedButton
 

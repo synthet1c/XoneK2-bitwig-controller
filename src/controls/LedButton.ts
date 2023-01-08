@@ -1,6 +1,5 @@
 import {midi} from '../XoneK2.control';
 import {Control} from './Control';
-import {log} from '../utils/utils';
 
 export enum LedButtonStates {
     RED = 'RED',

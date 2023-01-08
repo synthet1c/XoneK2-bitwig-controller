@@ -3,7 +3,7 @@ import MixerLayer from './layers/Mixer';
 import {MidiPort} from './classes/MidiPort';
 import {App} from './classes/App';
 import {SettingsHandler} from './classes/Settings';
-import {log} from './utils/utils';
+import {log} from './utils';
 import {leds} from './Configuration';
 
 let transport: TransportHandler = null;

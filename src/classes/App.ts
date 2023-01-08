@@ -1,4 +1,4 @@
-import {log} from '../utils/utils';
+import {log} from '../utils';
 import {MidiPort} from './MidiPort';
 import MidiIn = com.bitwig.extension.controller.api.MidiIn;
 
