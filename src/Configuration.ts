@@ -28,7 +28,7 @@ export enum Velocities {
     FULL = 128,
 }
 
-export const Controls = {
+export const GlobalControls = {
     encoders: {
         1: new Encoder(0),
         2: new Encoder(1),
@@ -109,10 +109,10 @@ export const Controls = {
 }
 
 export const ChannelControls = {
-    A: channelify(Controls, 1),
-    B: channelify(Controls, 2),
-    C: channelify(Controls, 3),
-    D: channelify(Controls, 4),
+    A: channelify(GlobalControls, 1),
+    B: channelify(GlobalControls, 2),
+    C: channelify(GlobalControls, 3),
+    D: channelify(GlobalControls, 4),
 }
 
 export const leds = flatMapLeds(ChannelControls, []);

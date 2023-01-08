@@ -1,6 +1,6 @@
 import Transport = com.bitwig.extension.controller.api.Transport;
 import {error, log} from '../utils/utils';
-import {LedButtonStates} from '../controls';
+import {AMBER, Control, GREEN, LedButtonStates, OFF, RED} from '../controls';
 import {ChannelControls} from '../Configuration';
 
 export class TransportHandler {
@@ -10,30 +10,22 @@ export class TransportHandler {
 
     constructor() {
         this.init();
-        this.bindObservers();
     }
 
     play = () => this.transport.play();
     record = () => this.transport.record();
     stop = () => this.transport.stop();
 
-    init() {
-        this.transport.isPlaying().markInterested();
-    }
-
-    bindObservers() {
-        this.transport.isPlaying().addValueObserver((isPlaying) => {
-            error('playing', isPlaying);
-            this.PLAY.setState(isPlaying ? LedButtonStates.GREEN : LedButtonStates.RED);
+    private handlePlay = (control: Control) => {
+        control.on('noteOn', (e: any) => {
+            this.transport.play();
+        });
+        this.transport.isPlaying().addValueObserver((playing) => {
+            control.setState(playing ? GREEN : RED);
         });
     }
 
-
-    onMidi = (status: number, channel: number, note: number, velocity: number): void => {
-        if (isNoteOn(status)) {
-            if (channel === this.PLAY.channel && note === this.PLAY.note) {
-                this.transport.play();
-            }
-        }
+    init() {
+        this.handlePlay(this.PLAY);
     }
 }
