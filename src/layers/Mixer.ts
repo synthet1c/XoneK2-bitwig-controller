@@ -1,7 +1,7 @@
 import TrackBank = com.bitwig.extension.controller.api.TrackBank;
 import CursorTrack = com.bitwig.extension.controller.api.CursorTrack;
 import {applySpec, path, prop} from 'rambda';
-import {AMBER, Control, GREEN, LedButtonStates, OFF, RED} from '../controls';
+import {AMBER, Control, Event, GREEN, LedButtonStates, OFF, RED} from '../controls';
 import {ChannelControls} from '../Configuration';
 import {log} from '../utils';
 import {preferences} from '../XoneK2.control';
@@ -72,7 +72,7 @@ export default class MixerLayer {
     }
 
     private handleMute = (control: Control, track: Track, i: number) => {
-        control.on('noteOn', (e: any) => {
+        control.on('noteOn', (e: Event) => {
             track.mute().toggle();
         });
         track.mute().addValueObserver((muted) => {
@@ -81,7 +81,7 @@ export default class MixerLayer {
     }
 
     private handleSolo = (control: Control, track: Track, i: number) => {
-        control.on('noteOn', (e: any) => {
+        control.on('noteOn', (e: Event) => {
             track.solo().toggle(false);
         });
         track.solo().addValueObserver((muted) => {
@@ -90,28 +90,28 @@ export default class MixerLayer {
     }
 
     private handleSelect = (control: Control, track: Track, i: number) => {
-        control.on('noteOn', (e: any) => {
+        control.on('noteOn', (e: Event) => {
             track.selectInMixer();
         });
         // note: need to figure out select watcher
     }
 
     private handleVolume = (control: Control, track: Track, i: number) => {
-        control.on('cc', (e: any) => {
+        control.on('cc', (e: Event) => {
             track.volume().set(Math.min(preferences.mixer.maxVolume, e.velocity), 128);
         });
     }
 
     private handleSend1 = (control: Control, track: Track, i: number) => {
         const send = track.getSend(0);
-        control.on('cc', (e: any) => {
+        control.on('cc', (e: Event) => {
             send.set(e.velocity, 128);
         });
     }
 
     private handleSend2 = (control: Control, track: Track, i: number) => {
         const send = track.getSend(1);
-        control.on('cc', (e: any) => {
+        control.on('cc', (e: Event) => {
             send.set(e.velocity, 128);
         });
     }
@@ -136,7 +136,7 @@ export default class MixerLayer {
     }
 
     private handleEncoder = (control: Control) => {
-        control.on('cc', (e) => {
+        control.on('cc', (e: Event) => {
             if (e.velocity < 64) {
                 this.cursorTrack.selectParent();
             } else {
@@ -146,7 +146,7 @@ export default class MixerLayer {
     }
 
     private handleScroll = (control: Control) => {
-        control.on('cc', (e) => {
+        control.on('cc', (e: Event) => {
             const scroll = e.velocity < 64 ? 1 : -1;
             this.trackBank.scrollBy(scroll);
         });
@@ -155,15 +155,15 @@ export default class MixerLayer {
     private testControlPressAndRelease = (control: Control, track: Track) => {
         let toggle = false;
         control.setState(LedButtonStates.AMBER);
-        control.on('hold', (event) => {
+        control.on('hold', (event: Event) => {
             log('on:hold', event);
             control.setState(LedButtonStates.RED);
         });
-        control.on('release', (event) => {
+        control.on('release', (event: Event) => {
             log('on:release', event);
             control.setState(toggle ? LedButtonStates.GREEN : LedButtonStates.AMBER);
         });
-        control.on('press', (event) => {
+        control.on('press', (event: Event) => {
             log('on:press', event);
             toggle = !toggle;
             control.setState(toggle ? LedButtonStates.GREEN : LedButtonStates.AMBER);

@@ -17,7 +17,7 @@ export class TransportHandler {
     stop = () => this.transport.stop();
 
     private handlePlay = (control: Control) => {
-        control.on('noteOn', (e: any) => {
+        control.on('noteOn', (e: Event) => {
             this.transport.play();
         });
         this.transport.isPlaying().addValueObserver((playing) => {

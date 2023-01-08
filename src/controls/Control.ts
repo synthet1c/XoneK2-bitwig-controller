@@ -1,6 +1,6 @@
 import {Encoder, Knob, LedButton, LedButtonStates, Slider, WeirdButton} from './';
 import {compose, filter, lensPath, over, prop, propEq} from 'rambda';
-import {error, log, setTimeout, clearTimeout} from '../utils';
+import {error, log, setTimeout, clearTimeout, isEventType} from '../utils';
 
 export type ControlType = Control | WeirdButton | Knob | Slider | Encoder | LedButton
 
@@ -16,6 +16,26 @@ interface Subscription {
     control: Control;
     callback: (e: any) => void;
     token: number;
+}
+
+export interface MidiMessageObject {
+    status: number;
+    channel: number;
+    note: number;
+    velocity: number;
+}
+
+export interface Event {
+    target: Control,
+    event: string,
+    status: number,
+    channel: number,
+    note: number,
+    velocity: number,
+}
+
+export interface SubscriptionPredicateObject extends MidiMessageObject {
+   event: any;
 }
 
 const controlState: {[key: string]: ControlState} = {};
@@ -84,11 +104,9 @@ export class Control {
         switch (typeof callback) {
             case 'number':
                 this.unsubscribe(this.key, 'token', callback);
-                // controlState[this.key].subscriptions = filter(propEq('token', callback), controlState[this.key].subscriptions);
                 break;
             case 'function':
                 this.unsubscribe(this.key, 'callback', callback);
-                // controlState[this.key].subscriptions = filter(propEq('callback', callback), controlState[this.key].subscriptions);
                 break;
             case 'undefined':
             default:
@@ -100,21 +118,22 @@ export class Control {
         const key = `${channel}-${note}`;
         const control = controlState[key];
         const now = Date.now();
+        const midiMessage: MidiMessageObject = { status, channel, note, velocity };
         if (control && control.usesPress) {
             if (isNoteOn(status)) {
                 control.lastPress = now;
                 clearTimeout(control.timeoutId);
                 control.timeoutId = null;
                 control.timeoutId = setTimeout(() => {
-                    this.triggerSubscribers(control, ({ event }) => event.event === 'hold')(status, channel, note, velocity)
+                    this.triggerSubscribers(control, isEventType('hold'), midiMessage)
                 }, 100);
             }
             else if (isNoteOff(status)) {
                 clearTimeout(control.timeoutId);
                 if (now - control.lastPress < 100) {
-                    this.triggerSubscribers(control, ({ event }) => event.event === 'press')(status, channel, note, velocity)
+                    this.triggerSubscribers(control, isEventType('press'), midiMessage)
                 } else {
-                    this.triggerSubscribers(control, ({ event }) => event.event === 'release')(status, channel, note, velocity)
+                    this.triggerSubscribers(control, isEventType('release'), midiMessage)
                 }
             }
         }
@@ -123,14 +142,14 @@ export class Control {
                 ({ event }) =>
                        (isNoteOn(status) && event.event === 'noteOn')
                     || (isNoteOff(status) && event.event === 'noteOff')
-                    || (isChannelController(status) && event.event === 'cc')
-            )(status, channel, note, velocity)
+                    || (isChannelController(status) && event.event === 'cc'), midiMessage)
         }
     }
 
-    static triggerSubscribers = (control: ControlState, predicate: (x: any) => boolean) => (status: number, channel: number, note: number, velocity: number) => {
+    static triggerSubscribers = (control: ControlState, predicate: (a: SubscriptionPredicateObject) => boolean, midiMessage: MidiMessageObject) => {
+        const { status, channel, note, velocity } = midiMessage;
         control.subscriptions.forEach((event: Subscription) => {
-            if (predicate({ event, status, channel, note, velocity })) {
+            if (predicate({ event, ...midiMessage })) {
                 event.callback({
                     target: this,
                     event: event.event,

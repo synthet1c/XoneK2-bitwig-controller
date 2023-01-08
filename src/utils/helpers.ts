@@ -1,5 +1,7 @@
 import {Control, LedButton} from '../controls';
+import {propEq} from 'rambda';
 
+export const isEventType = propEq('event');
 
 export const isObject = (possibleObject: any): boolean =>
     typeof possibleObject === 'object' && possibleObject !== null;
