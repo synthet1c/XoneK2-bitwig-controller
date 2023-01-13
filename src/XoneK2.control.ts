@@ -45,7 +45,7 @@ global.init = function init() {
     settings = new SettingsHandler();
     transport = new TransportHandler();
     cursorTrack = host.createCursorTrack('XONE_K2_TRACK', 'Cursor Track', 2, 4, false);
-    mainTrackBank = host.createMainTrackBank(12, 2, 4);
+    mainTrackBank = host.createMainTrackBank(16, 2, 4);
     mainTrackBank.followCursorTrack(cursorTrack);
     layer = new MixerLayer(mainTrackBank, cursorTrack);
 

@@ -3,7 +3,7 @@ import CursorTrack = com.bitwig.extension.controller.api.CursorTrack;
 import {applySpec, path, prop} from 'rambda';
 import {AMBER, Control, Event, GREEN, LedButtonStates, OFF, RED} from '../controls';
 import {ChannelControls} from '../Configuration';
-import {log} from '../utils';
+import {clearInterval, Interval, log, setInterval} from '../utils';
 import {preferences} from '../XoneK2.control';
 import Track = com.bitwig.extension.controller.api.Track;
 
@@ -59,6 +59,7 @@ export default class MixerLayer {
     init() {
         this.handleEncoder(ChannelControls.A.encoder);
         this.handleScroll(ChannelControls.A.scroll);
+        this.testInterval(ChannelControls.A.layer);
         for (let i = 0; i < this.trackBank.getSizeOfBank(); i++) {
             const track = this.trackBank.getItemAt(i);
             const controls = this.controls[i];
@@ -168,6 +169,19 @@ export default class MixerLayer {
             toggle = !toggle;
             control.setState(toggle ? LedButtonStates.GREEN : LedButtonStates.AMBER);
         });
+    }
+
+    public testInterval = (control: Control) => {
+        control.on('noteOn', (e: Event) => {
+            setInterval((interval: Interval) => {
+                log('interval', interval);
+                control.setState(interval.count % 2 ? RED : GREEN);
+                if (interval.count >= 5) {
+                    clearInterval(interval.token);
+                }
+            }, 100);
+        });
+
     }
 
     private controls: MixerControls[] = [

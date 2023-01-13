@@ -1,0 +1,28 @@
+// https://github.com/teotigraphix/Framework4Bitwig/blob/master/helper/Scales.js
+export const modes = [
+    {name: 'Major', notes: [0, 2, 4, 5, 7, 9, 11]},
+    {name: 'Minor', notes: [0, 2, 3, 5, 7, 8, 10]},
+    {name: 'Dorian', notes: [0, 2, 3, 5, 7, 9, 10]},
+    {name: 'Mixolydian', notes: [0, 2, 4, 5, 7, 9, 10]},
+    {name: 'Lydian', notes: [0, 2, 4, 6, 7, 9, 11]},
+    {name: 'Phrygian', notes: [0, 1, 3, 5, 7, 8, 10]},
+    {name: 'Locrian', notes: [0, 1, 3, 4, 6, 8, 10]},
+    {name: 'Diminished', notes: [0, 1, 3, 4, 6, 7, 9]},
+    {name: 'Whole-half', notes: [0, 2, 3, 5, 6, 8, 9]},
+    {name: 'Whole Tone', notes: [0, 2, 4, 6, 8, 10]},
+    {name: 'Minor Blues', notes: [0, 3, 5, 6, 7, 10]},
+    {name: 'Minor Pentatonic', notes: [0, 3, 5, 7, 10]},
+    {name: 'Major Pentatonic', notes: [0, 2, 4, 7, 9]},
+    {name: 'Harmonic Minor', notes: [0, 2, 3, 5, 7, 8, 11]},
+    {name: 'Melodic Minor', notes: [0, 2, 3, 5, 7, 9, 11]},
+    {name: 'Super Locrian', notes: [0, 1, 3, 4, 6, 8, 10]},
+    {name: 'Bhairav', notes: [0, 1, 4, 5, 7, 8, 11]},
+    {name: 'Hungarian Minor', notes: [0, 2, 3, 6, 7, 8, 11]},
+    {name: 'Minor Gypsy', notes: [0, 1, 4, 5, 7, 8, 10]},
+    {name: 'Hirojoshi', notes: [0, 4, 6, 7, 11]},
+    {name: 'In-Sen', notes: [0, 1, 5, 7, 10]},
+    {name: 'Iwato', notes: [0, 1, 5, 6, 10]},
+    {name: 'Kumoi', notes: [0, 2, 3, 7, 9]},
+    {name: 'Pelog', notes: [0, 1, 3, 7, 8]},
+    {name: 'Spanish', notes: [0, 1, 4, 5, 7, 9, 10]}
+];

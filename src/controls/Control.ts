@@ -1,6 +1,6 @@
 import {Encoder, Knob, LedButton, LedButtonStates, Slider, WeirdButton} from './';
 import {compose, filter, lensPath, over, prop, propEq} from 'rambda';
-import {error, log, setTimeout, clearTimeout, isEventType} from '../utils';
+import {error, log, setTimeout, clearTimeout, isEventType, Timer} from '../utils';
 
 export type ControlType = Control | WeirdButton | Knob | Slider | Encoder | LedButton
 
@@ -119,12 +119,13 @@ export class Control {
         const control = controlState[key];
         const now = Date.now();
         const midiMessage: MidiMessageObject = { status, channel, note, velocity };
+        log('onMidi', midiMessage);
         if (control && control.usesPress) {
             if (isNoteOn(status)) {
                 control.lastPress = now;
                 clearTimeout(control.timeoutId);
                 control.timeoutId = null;
-                control.timeoutId = setTimeout(() => {
+                control.timeoutId = setTimeout((timer: Timer) => {
                     this.triggerSubscribers(control, isEventType('hold'), midiMessage)
                 }, 100);
             }
