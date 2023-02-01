@@ -1,6 +1,7 @@
-import {log} from '../utils';
+import {log, trace} from '../utils';
 import {MidiPort} from './MidiPort';
 import MidiIn = com.bitwig.extension.controller.api.MidiIn;
+import API = com.bitwig.extension.controller.api;
 
 export interface AppConstructorArgs {
     midi: MidiPort;
@@ -22,6 +23,8 @@ export class App {
     sceneBank: API.SceneBank;
     cursorClip: API.Clip;
     cursorTrack: API.CursorTrack;
+    drumCursorTrack: API.CursorTrack;
+    drumEditorCursor: API.Clip;
     cursorDevice: API.CursorDevice;
     cursorTrackFirstDevice: API.PinnableCursorDevice;
     cursorRemote: API.CursorRemoteControlsPage;
@@ -33,21 +36,19 @@ export class App {
     numScenes = 8;
     numDrumPads = 64;
 
-    // controllers: Controller[] = Array(16).fill(null);
-
     constructor({
         midi,
         numTracks = 8,
-        numSends = 4,
+        numSends = 2,
         numScenes = 8,
-        numDrumPads = 34
+        numDrumPads = 8
     }: AppConstructorArgs) {
         this.midi = midi;
         this.numTracks = numTracks;
         this.numSends = numSends;
         this.numScenes = numScenes
         this.numDrumPads = numDrumPads;
-        // this.init();
+        this.init();
     }
 
     init() {
@@ -55,36 +56,29 @@ export class App {
         this.app = host.createApplication();
         this.transport = host.createTransport();
         // this.groove = host.createGroove();
-        // this.trackBank = host.createTrackBank(this.numTracks, this.numSends, this.numScenes);
-        // this.sceneBank = this.trackBank.sceneBank();
-        // this.cursorClip = host.createLauncherCursorClip(1, 1);
-        // this.cursorTrack = host.createCursorTrack('Primary', 'Primary', 0, 0, true);
-        // // this.cursorDevice = this.cursorTrack.createCursorDevice('Primary', 'Primary', 0, API.CursorDeviceFollowMode.FIRST_DEVICE)
-        // // this.cursorRemote = this.cursorDevice.createCursorRemoteControlsPage(8);
-        // // test
-        // // These are for Drum mode.
-        // // this.cursorTrackFirstDevice = this.cursorTrack.createCursorDevice("First Device", "First Device", 0, API.CursorDeviceFollowMode.FIRST_DEVICE);
-        // // this.cursorDrumPadBank = this.cursorTrackFirstDevice.createDrumPadBank(this.numDrumPads);
+        this.trackBank = host.createMainTrackBank(this.numTracks, this.numSends, this.numScenes);
+        this.sceneBank = this.trackBank.sceneBank();
+        this.cursorClip = host.createLauncherCursorClip(8, 4);
+        this.cursorTrack = host.createCursorTrack('XONE_PRIMARY_CURSOR', 'Primary Track', 2, 4, false);
+        this.cursorDevice = this.cursorTrack.createCursorDevice('XONE_PRIMARY_DEVICE', 'Primary Device', 0, API.CursorDeviceFollowMode.FIRST_DEVICE)
+        this.cursorRemote = this.cursorDevice.createCursorRemoteControlsPage(8);
+
+        // These are for Drum mode.
+        this.drumCursorTrack = host.createCursorTrack('XONE_DRUM_CURSOR', 'Drum Cursor', 2, 0, false);
+        this.cursorTrackFirstDevice = this.drumCursorTrack.createCursorDevice("XONE_DRUM_DEVICE", "Drum Device", 4, API.CursorDeviceFollowMode.FIRST_DEVICE);
+        this.cursorDrumPadBank = this.cursorTrackFirstDevice.createDrumPadBank(this.numDrumPads);
+        this.drumCursorTrack.selectFirstChild();
+
+        this.drumEditorCursor = host.createLauncherCursorClip(16, 1);
+
+        this.trackBank.followCursorTrack(this.cursorTrack);
+
+        this.cursorTrackFirstDevice.deviceType().addValueObserver(trace('cursorFirstDevice'));
+        this.cursorTrackFirstDevice.hasDrumPads().addValueObserver(trace('hasDrumPads'));
+        this.drumCursorTrack.trackType().addValueObserver(trace('drumCursorTrack.trackType'));
         // this.prefs = host.getPreferences();
         // this.controllers.forEach(controller => controller && controller.setApp(this));
         log('inside: after:app:init here', null);
-    }
-
-    initControllers() {
-
-    }
-
-    destroy() {
-        // this.controllers.forEach(controller => controller && controller.destroy());
-    }
-
-    flush() {
-        // this.controllers.forEach(controller => controller && controller.flush());
-    }
-
-    addController(controller: any) {
-        // controller.setApp(this);
-        // this.controllers[controller.channel] = controller;
     }
 
     initMidi() {

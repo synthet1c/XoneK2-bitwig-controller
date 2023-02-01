@@ -34,6 +34,8 @@ export function setTimeout(cb: (timer: Timer) => void, delay: number) {
     }, delay)
     return timerId
 }
+// @ts-ignore
+global.setTimeout = setTimeout;
 
 export function clearTimeout(timerId: number) {
     const index = timers.indexOf(timerId);

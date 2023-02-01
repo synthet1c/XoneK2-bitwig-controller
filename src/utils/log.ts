@@ -24,3 +24,9 @@ export const error = (tag: string, value: any) => {
     host.errorln(`xxxxxxxxxxxx --> ${tag}: ${JSON.stringify(value, null, 2)}`);
 }
 
+export const trace = (tag: string) => (value: any) => {
+    log(tag, value);
+    return value;
+}
+
+

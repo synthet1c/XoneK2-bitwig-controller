@@ -16,7 +16,8 @@
   "author": "Andrew Fountain (synthet1c)",
   "license": "ISC",
   "dependencies": {
-    "rambda": "^7.4.0"
+    "rambda": "^7.4.0",
+    "rxjs": "^7.8.0"
   },
   "devDependencies": {
     "@types/node": "^18.11.9",

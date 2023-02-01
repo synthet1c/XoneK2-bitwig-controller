@@ -72,7 +72,7 @@ export const GlobalControls = {
             KNOB_2: new Knob(11),
             KNOB_2_BUTTON: new LedButton(47),
             KNOB_3: new Knob(15),
-            KNOB_3_BUTTON: new LedButton(42),
+            KNOB_3_BUTTON: new LedButton(43),
         }
     },
     sliders: {

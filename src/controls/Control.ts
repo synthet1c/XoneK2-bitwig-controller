@@ -1,6 +1,7 @@
 import {Encoder, Knob, LedButton, LedButtonStates, Slider, WeirdButton} from './';
 import {compose, filter, lensPath, over, prop, propEq} from 'rambda';
 import {error, log, setTimeout, clearTimeout, isEventType, Timer} from '../utils';
+import {ReplaySubject, Subject} from 'rxjs';
 
 export type ControlType = Control | WeirdButton | Knob | Slider | Encoder | LedButton
 
@@ -39,16 +40,23 @@ export interface SubscriptionPredicateObject extends MidiMessageObject {
 }
 
 const controlState: {[key: string]: ControlState} = {};
+const controls: {[key: string]: Control} = {};
 
 export class Control {
 
     public key: string;
+    public onNoteOn$ = new Subject<Event>();
+    public onNoteOff$ = new Subject<Event>();
+    public onCC$ = new Subject<Event>();
+    public onMidi$ = new Subject<Event>();
 
     constructor(public note: number, public channel: number = 1) {
         this.key = `${this.channel}-${this.note}`
+        controls[this.key] = this;
     }
 
     setState(state: LedButtonStates): void {};
+    sendState(state: LedButtonStates): void {};
 
     clone(channel: number): ControlType {
         switch (true) {
@@ -84,7 +92,7 @@ export class Control {
             control: this,
             callback,
         });
-        return
+        return () => this.off(event, callback);
     }
 
     private unsubscribe = (id: string, key: string, token: (e: any) => void | number) =>
@@ -98,6 +106,7 @@ export class Control {
 
 
     off(event: string, callback?: (e: any) => void | number) {
+        // log('off', { event, control: this });
         if (!controlState[this.key]) {
             return;
         }
@@ -116,30 +125,61 @@ export class Control {
 
     static onMidi = (status: number, channel: number, note: number, velocity: number): void => {
         const key = `${channel}-${note}`;
-        const control = controlState[key];
+        const state = controlState[key];
+        const control = controls[key];
         const now = Date.now();
         const midiMessage: MidiMessageObject = { status, channel, note, velocity };
-        log('onMidi', midiMessage);
-        if (control && control.usesPress) {
-            if (isNoteOn(status)) {
-                control.lastPress = now;
-                clearTimeout(control.timeoutId);
-                control.timeoutId = null;
-                control.timeoutId = setTimeout((timer: Timer) => {
-                    this.triggerSubscribers(control, isEventType('hold'), midiMessage)
-                }, 100);
-            }
-            else if (isNoteOff(status)) {
-                clearTimeout(control.timeoutId);
-                if (now - control.lastPress < 100) {
-                    this.triggerSubscribers(control, isEventType('press'), midiMessage)
-                } else {
-                    this.triggerSubscribers(control, isEventType('release'), midiMessage)
-                }
-            }
-        }
+        // log('onMidi', midiMessage);
+        // if (state && state.usesPress) {
+        //     if (isNoteOn(status)) {
+        //         state.lastPress = now;
+        //         clearTimeout(state.timeoutId);
+        //         state.timeoutId = null;
+        //         state.timeoutId = setTimeout((timer: Timer) => {
+        //             this.triggerSubscribers(state, isEventType('hold'), midiMessage)
+        //         }, 100);
+        //     }
+        //     else if (isNoteOff(status)) {
+        //         clearTimeout(state.timeoutId);
+        //         if (now - state.lastPress < 100) {
+        //             this.triggerSubscribers(state, isEventType('press'), midiMessage)
+        //         } else {
+        //             this.triggerSubscribers(state, isEventType('release'), midiMessage)
+        //         }
+        //     }
+        // }
+
         if (control) {
-            this.triggerSubscribers(control,
+            const eventObj: Event = {
+                target: null,
+                event: 'noteOn',
+                status,
+                channel,
+                note,
+                velocity,
+            };
+            // target has a recursive error this hides it from the JSON parser
+            Object.defineProperty(eventObj, 'target', {
+                get() {
+                    return control;
+                },
+            })
+            switch (true) {
+                case isNoteOn(status):
+                    control.onNoteOn$.next(eventObj);
+                    break;
+                case isNoteOff(status):
+                    control.onNoteOff$.next({ ...eventObj, event: 'noteOff' } as Event);
+                    break;
+                case isChannelController(status):
+                    control.onCC$.next({ ...eventObj, event: 'cc' } as Event);
+                    break;
+            }
+            control.onMidi$.next(eventObj);
+        }
+
+        if (state) {
+            this.triggerSubscribers(state,
                 ({ event }) =>
                        (isNoteOn(status) && event.event === 'noteOn')
                     || (isNoteOff(status) && event.event === 'noteOff')
@@ -151,15 +191,20 @@ export class Control {
         const { status, channel, note, velocity } = midiMessage;
         control.subscriptions.forEach((event: Subscription) => {
             if (predicate({ event, ...midiMessage })) {
-                event.callback({
-                    target: this,
+                const eventObj: Event = {
+                    target: null, // control.control
                     event: event.event,
                     status,
                     channel,
                     note,
                     velocity,
-                });
+                };
+                event.callback(eventObj);
             }
         });
+    }
+
+    match({ channel, note }: Partial<Event>) {
+        return this.channel === channel && this.note === note;
     }
 }

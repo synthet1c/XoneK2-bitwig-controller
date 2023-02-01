@@ -5,19 +5,25 @@ import {App} from './classes/App';
 import {SettingsHandler} from './classes/Settings';
 import {error, log} from './utils';
 import {leds} from './Configuration';
+import DrumMachineLayer from './layers/DrumMachine';
+import {LayerHandler} from './classes/Layer';
+import TrackBank from './classes/TrackBank';
+import TrackBankHandler from './classes/TrackBank';
 
 let transport: TransportHandler = null;
 let mainTrackBank = null;
 let cursorTrack = null;
-let layer: MixerLayer = null;
+export let layer: LayerHandler = null;
 export let midi: MidiPort = null
 export let app: App = null;
 export let settings: SettingsHandler;
+export let trackBankHandler: TrackBankHandler;
 
 export const preferences = {
     channel: {},
     mixer: {
         maxVolume: 100,
+        maxDrumVolume: 100,
     }
 }
 
@@ -42,12 +48,18 @@ global.init = function init() {
         numDrumPads: 34,
     });
 
+
     settings = new SettingsHandler();
     transport = new TransportHandler();
-    cursorTrack = host.createCursorTrack('XONE_K2_TRACK', 'Cursor Track', 2, 4, false);
-    mainTrackBank = host.createMainTrackBank(16, 2, 4);
-    mainTrackBank.followCursorTrack(cursorTrack);
-    layer = new MixerLayer(mainTrackBank, cursorTrack);
+    // cursorTrack = host.createCursorTrack('XONE_K2_TRACK', 'Cursor Track', 2, 4, false);
+    // mainTrackBank = host.createMainTrackBank(16, 2, 4);
+    // mainTrackBank.followCursorTrack(cursorTrack);
+    trackBankHandler = new TrackBankHandler(app);
+
+    layer = new LayerHandler(app, {
+        mixer: new MixerLayer(app),
+        drum: new DrumMachineLayer(app),
+    });
 
     error("<--------- Xone X2 Extreme end init! --------->", Date.now() - start + 'ms');
 }

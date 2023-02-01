@@ -48,6 +48,15 @@ export class LedButton extends Control {
         this.modified = true;
     }
 
+    sendState(state: LedButtonStates): void {
+        this.previousState = this.state;
+        // @ts-ignore
+        this.state = this.states[state];
+        this.stateName = state;
+        this.modified = true;
+        this.updateLED();
+    }
+
     updateLED() {
         if (!this.modified || this.previousState === this.state) {
             return;
