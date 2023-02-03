@@ -2,6 +2,8 @@ import {log, trace} from '../utils';
 import {MidiPort} from './MidiPort';
 import MidiIn = com.bitwig.extension.controller.api.MidiIn;
 import API = com.bitwig.extension.controller.api;
+import {Subject} from 'rxjs';
+import {MidiEvent} from '../controls';
 
 export interface AppConstructorArgs {
     midi: MidiPort;
@@ -13,6 +15,7 @@ export interface AppConstructorArgs {
 
 export class App {
 
+    midi$ = new Subject<MidiEvent>();
     app: API.Application;
     midi: MidiPort;
     midiDawOut: API.MidiOut;
@@ -53,18 +56,19 @@ export class App {
 
     init() {
         log('inside: app:init here', null);
+        this.midi.midi$.subscribe(this.midi$);
         this.app = host.createApplication();
         this.transport = host.createTransport();
         // this.groove = host.createGroove();
         this.trackBank = host.createMainTrackBank(this.numTracks, this.numSends, this.numScenes);
         this.sceneBank = this.trackBank.sceneBank();
         this.cursorClip = host.createLauncherCursorClip(8, 4);
-        this.cursorTrack = host.createCursorTrack('XONE_PRIMARY_CURSOR', 'Primary Track', 2, 4, false);
+        this.cursorTrack = host.createCursorTrack('XONE_PRIMARY_CURSOR', 'Primary Track', 2, 4, true);
         this.cursorDevice = this.cursorTrack.createCursorDevice('XONE_PRIMARY_DEVICE', 'Primary Device', 0, API.CursorDeviceFollowMode.FIRST_DEVICE)
         this.cursorRemote = this.cursorDevice.createCursorRemoteControlsPage(8);
 
         // These are for Drum mode.
-        this.drumCursorTrack = host.createCursorTrack('XONE_DRUM_CURSOR', 'Drum Cursor', 2, 0, false);
+        this.drumCursorTrack = host.createCursorTrack('XONE_DRUM_CURSOR', 'Drum Cursor', 2, 0, true);
         this.cursorTrackFirstDevice = this.drumCursorTrack.createCursorDevice("XONE_DRUM_DEVICE", "Drum Device", 4, API.CursorDeviceFollowMode.FIRST_DEVICE);
         this.cursorDrumPadBank = this.cursorTrackFirstDevice.createDrumPadBank(this.numDrumPads);
         this.drumCursorTrack.selectFirstChild();
@@ -79,23 +83,6 @@ export class App {
         // this.prefs = host.getPreferences();
         // this.controllers.forEach(controller => controller && controller.setApp(this));
         log('inside: after:app:init here', null);
-    }
-
-    initMidi() {
-        log('before:app:initMidi', null);
-        this.midiDawOut = host.getMidiOutPort(0);
-        this.midiNotesOut = host.getMidiOutPort(1);
-
-        // Setup Input Ports.
-        let midiDawIn = host.getMidiInPort(0);
-        let midiNotesIn = host.getMidiInPort(1);
-
-
-
-        midiDawIn.setMidiCallback(this.midiCallback);
-        midiDawIn.setSysexCallback(this.sysexCallback);
-
-        log('after:app:initMidi', null);
     }
 
     allowMidiNotesToPass = (midiNotesIn: MidiIn) => {

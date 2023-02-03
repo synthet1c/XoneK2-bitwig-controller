@@ -7,4 +7,8 @@ export class Encoder extends Control {
     ) {
         super(note, channel);
     }
+
+    clone(channel: number) {
+        return new Encoder(this.note, channel);
+    }
 }

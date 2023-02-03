@@ -38,6 +38,8 @@ export class LedButton extends Control {
         this.previousState = 0;
         this.modified = false;
         this.state = LedButtonStates.OFF;
+        this.onNoteOn$.subscribe(() => this.held$.next(true));
+        this.onNoteOff$.subscribe(() => this.held$.next(false));
     }
 
     setState(state: LedButtonStates): void {
@@ -68,6 +70,10 @@ export class LedButton extends Control {
         }
         midi.output.sendMidi(0x90 + (this.channel - 1), this.state, 127);
     }
+
+    clone(channel: number) {
+        return new LedButton(this.note, channel);
+    }
 }
 
 
@@ -80,6 +86,12 @@ export class WeirdButton extends LedButton {
             [LedButtonStates.GREEN]: note + 8,
             [LedButtonStates.OFF]: 0,
         }
+        this.onNoteOn$.subscribe(() => this.held$.next(true));
+        this.onNoteOff$.subscribe(() => this.held$.next(false));
+    }
+
+    clone(channel: number) {
+        return new WeirdButton(this.note, channel);
     }
 }
 

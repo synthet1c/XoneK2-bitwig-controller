@@ -3,7 +3,7 @@ import {app, layer, preferences} from '../XoneK2.control';
 import {applySpec, path} from 'rambda';
 import {ChannelControls} from '../Configuration';
 import {error, log, trace} from '../utils';
-import {Event, AMBER, Control, GREEN, OFF, RED} from '../controls';
+import {MidiEvent, AMBER, Control, GREEN, OFF, RED} from '../controls';
 import {Layer} from '../classes/Layer';
 import {toObservable, observerToObservable} from '../utils/toObservable';
 import {BehaviorSubject, map, ReplaySubject, Subscription} from 'rxjs';
@@ -73,9 +73,9 @@ export default class DrumMachineLayer extends Layer {
         this.init();
     }
 
-    init() {
+    init = () => {
         this.stepData$ = observerToObservable(this.app.drumEditorCursor.addStepDataObserver);
-        this.observables = initArray(0, 16).map((x, i) => {
+        this.observables = initArray(0, 8).map((x, i) => {
             const pad = this.app.cursorDrumPadBank.getItemAt(i);
             return {
                 mute$: toObservable(pad.mute()),
@@ -93,7 +93,7 @@ export default class DrumMachineLayer extends Layer {
         });
     }
 
-    activate() {
+    activate = () => {
 
         error('DrumMachine', 'activate');
 
@@ -117,12 +117,12 @@ export default class DrumMachineLayer extends Layer {
                 observables.selectedInEditor$.subscribe((selected: boolean) => selector.setState(selected ? AMBER : RED)),
                 observables.exists$.subscribe(trace('exists$')),
                 observables.playingNotes$.subscribe(trace('playingNotes$')),
-                selector.onNoteOn$.subscribe((e: Event) => pad.selectInEditor()),
-                controls.mute.onNoteOn$.subscribe((e: Event) => pad.mute().toggle()),
-                controls.solo.onNoteOn$.subscribe((e: Event) => pad.solo().toggle(false)),
-                controls.volume.onCC$.subscribe((e: Event) => pad.volume().set(Math.min(preferences.mixer.maxDrumVolume, e.velocity), 128)),
-                controls.encoder.onCC$.subscribe((e: Event) => {
-                    app.cursorRemote.getParameter(i).inc(e.velocity > 64 ? -0.01 : 0.01);
+                selector.onNoteOn$.subscribe((e: MidiEvent) => pad.selectInEditor()),
+                controls.mute.onNoteOn$.subscribe((e: MidiEvent) => pad.mute().toggle()),
+                controls.solo.onNoteOn$.subscribe((e: MidiEvent) => pad.solo().toggle(false)),
+                controls.volume.onCC$.subscribe((e: MidiEvent) => pad.volume().set(Math.min(preferences.mixer.maxDrumVolume, e.velocity), 128)),
+                controls.encoder.onCC$.subscribe((e: MidiEvent) => {
+                    this.app.cursorRemote.getParameter(i).inc(e.velocity > 64 ? -0.01 : 0.01);
                 }),
                 observables.noteData$.subscribe((value: NoteStep) => log('step$', {value})),
                 observables.stepData$.subscribe(((step: number, y: number, playing: number) => {
@@ -134,7 +134,7 @@ export default class DrumMachineLayer extends Layer {
         // this.testPlayingNotes();
     }
 
-    deactivate() {
+    deactivate = () => {
         error('DrumMachine', 'deactivate');
         this.destroy$.next(false);
         this.destroy$.complete();

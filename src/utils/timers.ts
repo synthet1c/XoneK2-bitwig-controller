@@ -12,30 +12,35 @@ let timers: number[] = [];
 let timerId = 0;
 
 export function setTimeout(cb: (timer: Timer) => void, delay: number) {
-    const token = ++timerId;
-    const start = Date.now();
-    timers.push(token);
-    log('setTimeout:init', token);
-    host.scheduleTask(() => {
-        log('scheduleTask:called', token);
-        if (timers.indexOf(token) === -1) {
-            log('scheduleTask:cancelled', token);
-            return;
-        }
-        const elapsed = Date.now() - start;
-        cb({
-            start,
-            elapsed,
-            duration: elapsed,
-            token,
-            precision: elapsed / delay,
-        });
-        error('setTimeout:called', timers);
-    }, delay)
-    return timerId
+    // try {
+        const token = ++timerId;
+        const start = Date.now();
+        timers.push(token);
+        log('setTimeout:init', token);
+        host.scheduleTask(() => {
+            log('scheduleTask:called', token);
+            if (timers.indexOf(token) === -1) {
+                log('scheduleTask:cancelled', token);
+                return;
+            }
+            const elapsed = Date.now() - start;
+            cb({
+                start,
+                elapsed,
+                duration: elapsed,
+                token,
+                precision: elapsed / delay,
+            });
+            error('setTimeout:called', timers);
+        }, Math.max(16, delay))
+        return timerId
+    // } catch (e) {
+    //     @ts-ignore
+        // error('setTimeout fucked up', e.message);
+    // }
 }
 // @ts-ignore
-global.setTimeout = setTimeout;
+// global.setTimeout = setTimeout;
 
 export function clearTimeout(timerId: number) {
     const index = timers.indexOf(timerId);
@@ -45,6 +50,9 @@ export function clearTimeout(timerId: number) {
     }
     log('clearTimeout:after', timers);
 }
+
+// @ts-ignore
+// global.clearTimeout = clearTimeout;
 
 export interface Interval {
     token: number;

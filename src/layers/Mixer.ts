@@ -1,9 +1,9 @@
 import TrackBank = com.bitwig.extension.controller.api.TrackBank;
 import CursorTrack = com.bitwig.extension.controller.api.CursorTrack;
 import {applySpec, path, prop} from 'rambda';
-import {AMBER, Control, Event, GREEN, LedButtonStates, OFF, RED} from '../controls';
+import {AMBER, Control, MidiEvent, GREEN, LedButtonStates, OFF, RED} from '../controls';
 import {ChannelControls} from '../Configuration';
-import {clearInterval, error, Interval, log, setInterval, WhenActive} from '../utils';
+import {clearInterval, error, Interval, log, setInterval, trace, WhenActive} from '../utils';
 import {preferences, trackBankHandler} from '../XoneK2.control';
 import Track = com.bitwig.extension.controller.api.Track;
 import {Layer} from '../classes/Layer';
@@ -118,28 +118,28 @@ export default class MixerLayer extends Layer {
         }
     }
 
-    private handleMute = (control: Control, track: Track, i: number) => (e: Event) => {
+    private handleMute = (control: Control, track: Track, i: number) => (e: MidiEvent) => {
         track.mute().toggle();
     }
 
-    private handleSolo = (control: Control, track: Track, i: number) => (e: Event) => {
+    private handleSolo = (control: Control, track: Track, i: number) => (e: MidiEvent) => {
         track.solo().toggle(false);
     }
 
-    private handleSelect = (control: Control, track: Track, i: number) => (e: Event) => {
+    private handleSelect = (control: Control, track: Track, i: number) => (e: MidiEvent) => {
         track.selectInMixer();
     }
 
-    private handleVolume = (control: Control, track: Track, i: number) => (e: Event) => {
+    private handleVolume = (control: Control, track: Track, i: number) => (e: MidiEvent) => {
         track.volume().set(Math.min(preferences.mixer.maxVolume, e.velocity), 128);
     }
 
-    private handleSend1 = (control: Control, track: Track, i: number) => (e: Event) => {
+    private handleSend1 = (control: Control, track: Track, i: number) => (e: MidiEvent) => {
         const send = track.getSend(0);
         send.set(e.velocity, 128);
     }
 
-    private handleSend2 = (control: Control, track: Track, i: number) => (e: Event) => {
+    private handleSend2 = (control: Control, track: Track, i: number) => (e: MidiEvent) => {
         const send = track.getSend(1);
         send.set(e.velocity, 128);
     }
@@ -161,7 +161,8 @@ export default class MixerLayer extends Layer {
         control.setState(state);
     }
 
-    private handleEncoder(e: Event) {
+    private handleEncoder = (e: MidiEvent) => {
+        log('handleEncoder', e);
         if (e.velocity < 64) {
             this.cursorTrack.selectFirstChild();
         } else {
@@ -169,7 +170,7 @@ export default class MixerLayer extends Layer {
         }
     }
 
-    private handleScroll(e: Event) {
+    private handleScroll = (e: MidiEvent) => {
         const scroll = e.velocity < 64 ? 1 : -1;
         this.trackBank.scrollBy(scroll);
     }
@@ -193,7 +194,7 @@ export default class MixerLayer extends Layer {
     }
 
     public testInterval = (control: Control) => {
-        control.on('noteOn', (e: Event) => {
+        control.onNoteOn$.subscribe((e: MidiEvent) => {
             setInterval((interval: Interval) => {
                 log('interval', interval);
                 control.setState(interval.count % 2 ? RED : GREEN);

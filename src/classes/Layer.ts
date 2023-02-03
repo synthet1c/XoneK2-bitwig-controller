@@ -10,7 +10,6 @@ export class Layer {
 
     scrollOffset = 0;
     active = false;
-    state: any[];
 
     constructor(public app: App) {
         this.app.trackBank.cursorIndex().markInterested();
@@ -69,25 +68,21 @@ export class LayerHandler {
 
     addListeners = () => {
 
-        log('cursorIndex', this.app.trackBank.cursorIndex());
         for (let i = 0; i < this.app.trackBank.getSizeOfBank(); i++) {
             const item = this.app.trackBank.getItemAt(i);
             const button = this.buttons[i];
-
-            button.on('noteOn', (e: Event) => {
-                error('LayerHandler:button:noteOn', e);
+            button.onNoteOn$.subscribe((e: Event) => {
                 item.selectInMixer();
             });
         }
 
-        this.layerButton.on('noteOn', this.setLayer);
+        this.layerButton.onNoteOn$.subscribe(this.setLayer);
     }
 
     setLayer = (e: Event) => {
         const nextIndex = (this.activeLayerIndex + 1) >= this.layersIndexed.length ? 0 : this.activeLayerIndex + 1;
         this.activeLayerIndex = nextIndex;
         const nextLayer = this.layersIndexed[nextIndex];
-        log('setLayer', { nextIndex, nextLayer });
         this.activate(nextLayer);
     }
 
@@ -95,6 +90,7 @@ export class LayerHandler {
         this.activeLayer.deactivate();
         this.activeLayer = this.layers[layerName];
         error('activate', layerName);
+        alert(layerName);
         this.activeLayer.activate();
 
         switch (this.activeLayer) {

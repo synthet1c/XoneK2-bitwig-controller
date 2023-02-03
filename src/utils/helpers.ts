@@ -1,5 +1,7 @@
 import {Control, LedButton} from '../controls';
 import {propEq} from 'rambda';
+import {error, log} from './log';
+import {Observable, Subject} from 'rxjs';
 
 export const isEventType = propEq('event');
 
@@ -14,17 +16,20 @@ export const isObject = (possibleObject: any): boolean =>
  * @param acc {object}
  */
 export function channelify(controls: any, channel: number, acc: any = {}) {
-    for (const [key, value] of Object.entries(controls)) {
-        if (isObject(value)) {
-            acc[key] = channelify(value, channel, {});
-        }
-        if (value instanceof Control) {
-            acc[key] = value.clone(channel)
-            continue;
-        }
+    function _channelify(controls: any, channel: number, acc: any = {}) {
+        for (const [key, value] of Object.entries(controls)) {
+            if (isObject(value) && !(value instanceof Observable)) {
+                acc[key] = _channelify(value, channel, {});
+            }
+            if (value instanceof Control) {
+                acc[key] = value.clone(channel)
+                continue;
+            }
 
+        }
+        return acc;
     }
-    return acc;
+    return _channelify(controls, channel, acc);
 }
 
 export function over(object: any, callback: (value: any) => void): void {
@@ -33,7 +38,7 @@ export function over(object: any, callback: (value: any) => void): void {
             callback(value);
             continue;
         }
-        if (isObject(value)) {
+        if (isObject(value) && !(value instanceof Observable)) {
             over(value, callback);
         }
     }
@@ -45,7 +50,10 @@ export function flatMapLeds(object: any, acc : LedButton[] = []): LedButton[] {
             acc = acc.concat(value);
             continue;
         }
-        if (isObject(value)) {
+        if (value instanceof Control) {
+            continue;
+        }
+        if (isObject(value) && !(value instanceof Observable)) {
             acc = acc.concat(flatMapLeds(value, []));
         }
     }
